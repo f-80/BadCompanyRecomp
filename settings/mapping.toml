@@ -1,7 +1,7 @@
-# ArmyOfTwoRecomp - input mapping settings
+# BadCompanyRecomp - keyboard and mouse input mapping
 #
 # Loaded automatically at startup in addition to hardware.toml (see
-# OnConfigurePaths in src/armyoftworecomp_app.h.h). --flag on the command line and
+# OnConfigurePaths in src/badcompanyrecomp_app.h). --flag on the command line and
 # REX_* environment variables always override values from this file.
 #
 # Gamepad button layouts (DualShock 4 / DualSense / Xbox / Switch Pro, etc.)
@@ -15,6 +15,9 @@
 # (input disabled). "sdl" is what's actually in use, confirmed via the
 # startup log line "SDL input driver initialized successfully".
 input_backend = "sdl"
+
+# Extra vertical sensitivity for relative mouse look; 1.0 restores SDK behavior.
+badco_mouse_y_scale = 3.0
 
 # Path to a custom HID remap file used to fill in gamepads SDL doesn't
 # already recognize, or "" to skip it. "gamecontrollerdb.txt" matches the
@@ -33,38 +36,38 @@ mnk_mode = true
 mnk_mouse = true
 mnk_sensitivity = 1.0
 
-# ─────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------
 # Keyboard bindings (default values)
-# ─────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------
 # Format: comma-separated list of keys, optional modifiers (Shift+, Ctrl+, Alt+)
 
 # Controller buttons
-keybind_a = "Semicolon,Space"          # A button
-keybind_b = "Quote,Backspace"          # B button
-keybind_x = "L"                        # X button
-keybind_y = "P"                        # Y button
+keybind_a = "Space,Shift+Space,Ctrl+Space,Shift+Ctrl+Space"
+keybind_b = "C,Ctrl+Control,Shift+Ctrl+Control"
+keybind_x = "E,R,Shift+E,Shift+R,Ctrl+E,Ctrl+R,Shift+Ctrl+E,Shift+Ctrl+R"
+keybind_y = "2,Shift+2,Ctrl+2,Shift+Ctrl+2"
 
 # Triggers (analog)
-keybind_left_trigger = "Q,I"           # Left trigger
-keybind_right_trigger = "E,O"          # Right trigger
+keybind_left_trigger = "RMB,Shift+RMB,Ctrl+RMB,Shift+Ctrl+RMB"
+keybind_right_trigger = "LMB,Shift+LMB,Ctrl+LMB,Shift+Ctrl+LMB"
 
 # Shoulder buttons
-keybind_left_shoulder = "1"            # Left shoulder (LB)
-keybind_right_shoulder = "3"           # Right shoulder (RB)
+keybind_left_shoulder = "Q,Shift+Q,Ctrl+Q,Shift+Ctrl+Q"
+keybind_right_shoulder = "G,Shift+G,Ctrl+G,Shift+Ctrl+G"
 
 # Left stick (analog)
-keybind_lstick_up = "W"                # Left stick up
-keybind_lstick_down = "S"              # Left stick down
-keybind_lstick_left = "A"              # Left stick left
-keybind_lstick_right = "D"             # Left stick right
-keybind_lstick_press = "F"             # Left stick press (L3)
+keybind_lstick_up = "W,Shift+W,Ctrl+W,Shift+Ctrl+W"
+keybind_lstick_down = "S,Shift+S,Ctrl+S,Shift+Ctrl+S"
+keybind_lstick_left = "A,Shift+A,Ctrl+A,Shift+Ctrl+A"
+keybind_lstick_right = "D,Shift+D,Ctrl+D,Shift+Ctrl+D"
+keybind_lstick_press = "Shift+Shift"
 
 # Right stick (analog)
 keybind_rstick_up = "Up"               # Right stick up
 keybind_rstick_down = "Down"           # Right stick down
 keybind_rstick_left = "Left"           # Right stick left
 keybind_rstick_right = "Right"         # Right stick right
-keybind_rstick_press = "K"             # Right stick press (R3)
+keybind_rstick_press = "F,Shift+F,Ctrl+F,Shift+Ctrl+F"
 
 # D-pad
 keybind_dpad_up = "Shift+Up"           # D-pad up
@@ -73,7 +76,7 @@ keybind_dpad_left = "Shift+Left"       # D-pad left
 keybind_dpad_right = "Shift+Right"     # D-pad right
 
 # Special buttons
-keybind_back = "Z,Tab"                 # Back button
-keybind_start = "X,Return"             # Start button
+keybind_back = "Tab"
+keybind_start = "Escape,Return"
 keybind_guide = ""                     # Guide button (empty = disabled)
 

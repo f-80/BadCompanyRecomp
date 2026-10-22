@@ -3,7 +3,7 @@
 
 gpu_plugin = "xenos"
 graphics_backend = "any"
-vsync = false
+vsync = true
 
 # Internal render scale (1 = native 720p)
 resolution_scale = 1
@@ -16,7 +16,7 @@ texture_cache_memory_limit_hard = 4096
 clear_memory_page_state = true
 readback_memexport = true
 readback_memexport_fast = true
-readback_resolve = "fast"
+readback_resolve = "full"
 host_present_from_non_ui_thread = true
 
 window_width = 1920
@@ -30,6 +30,12 @@ render_target_path_d3d12 = "rov"
 d3d12_readback_resolve = true
 gamma_render_target_as_unorm16 = true
 
+# Monitor output curve; 2 restores the SDK's BT.709 TV curve. Restart required.
+badco_display_gamma_type = 1
+
+# Disable the engine film-grain pass; false restores the original setting.
+badco_disable_film_grain = true
+
 store_shaders = true
 present_letterbox = true
 
@@ -41,6 +47,7 @@ d3d12_break_on_warning = false
 d3d12_debug = false
 d3d12_dxbc_disasm = false
 d3d12_dxbc_disasm_dxilconv = false
+# Restore the SDK's automatic worker count after prolonged startup with 2 workers.
 d3d12_pipeline_creation_threads = -1
 d3d12_queue_priority = 2
 d3d12_submit_on_primary_buffer_end = true
@@ -53,12 +60,44 @@ vulkan_allow_present_mode_fifo_relaxed = false
 vulkan_allow_present_mode_mailbox = false
 
 headless = false
-log_level = "debug"
+log_level = "info"
 gpu_allow_invalid_fetch_constants = true
-dev_debug_runtime = true
+dev_debug_runtime = false
 
 # Gameplay / Retro physics: authentic 30 FPS
 badco_fps_60 = false
 
 # Filesystem: Frostbite dvd-probe check requires write access to GAME:
 allow_game_relative_writes = true
+
+badco_shadow_array_fetch_fix = true
+
+badco_shadow_depth_readback_fast = false
+
+badco_hdr_readback_fast = false
+
+badco_performance_diagnostics = false
+
+badco_diagnostic_hotkeys = false
+
+badco_startup_self_tests = false
+
+badco_timing_diagnostics = false
+
+badco_shadow_array_diagnostics = false
+
+badco_shadow_gpu_capture = false
+
+badco_depth_readback_probe = false
+
+badco_output_size_probe = false
+
+badco_shadow_fixed_movement = -1
+
+draw_resolution_scale_x = 1
+
+draw_resolution_scale_y = 1
+
+badco_mnk_frame_sampling = true
+
+badco_mouse_deadzone_compensation = true
