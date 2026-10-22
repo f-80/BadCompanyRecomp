@@ -33,6 +33,9 @@
 #include <rex/runtime.h>
 #include <rex/system/gpu_plugin.h>
 #include <rex/system/function_dispatcher.h>
+#include <rex/ui/window.h>
+#include <rex/ui/keybinds.h>
+#include <rex/input/mnk/mnk_input_driver.h>
 
 #include "generated/default/badcompanyrecomp_pch.h"
 #include "generated/default/badcompanyrecomp_funcs.h"
@@ -41,6 +44,10 @@
 #include "game_cvars.h"
 #include "game_patches.h"
 #include "utils.h"
+#include "trial_fault_trace.h"
+#include "trial_mouse_axes.h"
+#include "trial_mnk_sampling.h"
+#include "trial_gpu_cache.h"
 
 extern const rex::PPCImageInfo PPCImageConfig;
 
@@ -117,6 +124,9 @@ static LONG WINAPI CrashHandler(EXCEPTION_POINTERS *ep)
       std::fprintf(f, "Exception Address: %p\n", ep->ExceptionRecord->ExceptionAddress);
       std::fprintf(f, "Thread ID:         %lu\n", GetCurrentThreadId());
       std::fprintf(f, "RIP: %p, RSP: %p\n", (void *)ep->ContextRecord->Rip, (void *)ep->ContextRecord->Rsp);
+      const auto &cs = trial_cs_semaphore::last;
+      std::fprintf(f, "RTL leave snapshot: active=%u cs=%08X lr=%08X recursion=%u count=%d handle=%08X type=%u\n",
+                   cs.active, cs.address, cs.lr, cs.recursion, cs.count, cs.handle, cs.type);
 
       uintptr_t *rsp = (uintptr_t *)ep->ContextRecord->Rsp;
       for (int i = 0; i < 128; ++i)
@@ -206,6 +216,7 @@ public:
 
   void OnPreSetup(rex::RuntimeConfig &config) override
   {
+    trial_mnk_sampling::Configure(config);
     std::string backend = REXCVAR_GET(graphics_backend);
     if (backend != "any" && !config.gpu_plugin.empty())
     {
@@ -266,9 +277,141 @@ public:
 
   void OnPostSetup() override
   {
+#if defined(_WIN32)
+    // Observe faults before runtime handlers; preserve their disposition.
+    AddVectoredExceptionHandler(1, TrialGuestFaultTrace);
+#endif
+    // Trial diagnostics: report only this application's window and desktop.
+#if defined(_WIN32)
+    if (auto *w = window())
+    {
+      HWND hwnd = static_cast<HWND>(w->GetNativeWindowHandle());
+      RECT rect{};
+      GetWindowRect(hwnd, &rect);
+      char station[128]{};
+      char desktop[128]{};
+      DWORD needed = 0, session = 0;
+      GetUserObjectInformationA(GetProcessWindowStation(), UOI_NAME, station, sizeof(station), &needed);
+      GetUserObjectInformationA(GetThreadDesktop(GetCurrentThreadId()), UOI_NAME, desktop, sizeof(desktop), &needed);
+      ProcessIdToSessionId(GetCurrentProcessId(), &session);
+      REXLOG_INFO("[trial-window] handle={:X} visible={} minimized={} rect=({},{},{},{}) logical={}x{} station={} desktop={} session={} console_session={}",
+                  reinterpret_cast<uintptr_t>(hwnd), IsWindowVisible(hwnd) != FALSE, IsIconic(hwnd) != FALSE,
+                  rect.left, rect.top, rect.right, rect.bottom,
+                  w->GetActualLogicalWidth(), w->GetActualLogicalHeight(), station, desktop,
+                  session, WTSGetActiveConsoleSessionId());
+      rex::FlushLogging();
+    }
+#endif
     PrecommitMemoryAliases();
     UnlockGuestMemoryProtection();
     utils::LoadSettingsFiles();
+
+    // Enable the SDK mouse-look gate and provide a way to release/reacquire it.
+#if defined(_WIN32)
+    if (REXCVAR_GET(badco_startup_self_tests)) {
+    trial_cs::VerifyInitialization();
+    trial_cs_semaphore::Verify();
+    trial_shadow::Verify();
+    trial_mnk_sampling::Verify();
+    trial_mouse_precision::Verify();
+    }
+    if (REXCVAR_GET(badco_shadow_packing_probe)) {
+      trial_shadow_upload::VerifyPacking();
+      trial_shadow_semantics::Verify();
+    }
+#endif
+    rex::input::mnk::SetMouseLookActive(true);
+    trial_mouse::axes.Attach(window());
+    if (REXCVAR_GET(badco_diagnostic_hotkeys)) {
+    rex::ui::RegisterBind("bind_trial_gpu_cache_reset", "F11", "Reset runtime GPU caches once", [] {
+      trial_gpu_cache::RequestReset("F11");
+    });
+    REXLOG_INFO("[trial-gpu-cache] F11 requests one runtime cache reset; default rendering unchanged");
+    }
+    if (REXCVAR_GET(badco_gpu_cache_reset_probe))
+      trial_gpu_cache::RequestReset("boot_probe");
+    if (REXCVAR_GET(badco_diagnostic_hotkeys)) {
+    REXLOG_INFO("[trial-shadow-trace] binding_verified={} semantic_binding_verified={}; F10 captures cascades, named uploads and engine semantic 33 for 10 seconds",
+                trial_shadow_trace::BindingVerified(rex::Runtime::instance()->virtual_membase()),
+                trial_shadow_semantics::BindingVerified(rex::Runtime::instance()->virtual_membase()));
+    rex::ui::RegisterBind("bind_trial_shadow_capture", "F10", "Capture shadow matrices for 10 seconds", [] {
+      trial_shadow_trace::Arm();
+        trial_shadow_gpu::Request();
+      rex::FlushLogging();
+    });
+    }
+      if (REXCVAR_GET(badco_shadow_gpu_capture) || REXCVAR_GET(badco_shadow_array_fetch_fix)) {
+        const bool installed = trial_shadow_gpu::Install();
+        if (installed && REXCVAR_GET(badco_shadow_gpu_capture_probe)) trial_shadow_gpu::Request();
+        if (installed && REXCVAR_GET(badco_diagnostic_hotkeys) && REXCVAR_GET(badco_shadow_depth_readback_fast)) {
+          rex::ui::RegisterBind("bind_trial_depth_readback", "F6", "Toggle selective GPU readback", [this] {
+            const bool next = !trial_readback32::enabled.load(std::memory_order_relaxed);
+            trial_readback32::enabled.store(next, std::memory_order_relaxed);
+            if (auto* w = window()) w->SetTitle(next ? "Selective readback: FAST (F6)" : "Selective readback: FULL (F6)");
+            REXLOG_INFO("[trial-depth-readback] F6 enabled={}", next);
+            rex::FlushLogging();
+          });
+          REXLOG_INFO("[trial-depth-readback] experiment armed; F6 toggles selective readback; hdr_experiment={} rgba8_resolves_retain_configured_mode=true", REXCVAR_GET(badco_hdr_readback_fast));
+          if (REXCVAR_GET(badco_depth_readback_probe)) {
+            unsigned matches = 0;
+            std::string owners;
+            for (const auto& entry : rex::cvar::GetRegistry()) {
+              if (entry.name.starts_with("bind_") && entry.getter) {
+                const auto key = entry.getter();
+                REXLOG_INFO("[trial-keybind-registry] name={} key={}", entry.name, key);
+                if (key == "F6") { ++matches; owners += entry.name + ";"; }
+              }
+            }
+            const bool saved = trial_readback32::enabled.load(std::memory_order_relaxed);
+            bool routed = false;
+            if (matches == 1 && owners == "bind_trial_depth_readback;") {
+              rex::ui::KeyEvent first(nullptr, rex::ui::ParseVirtualKey("F6"), 1, false, false, false, false, false);
+              rex::ui::KeyEvent second(nullptr, rex::ui::ParseVirtualKey("F6"), 1, false, false, false, false, false);
+              routed = rex::ui::ProcessKeyEvent(first) && first.is_handled() &&
+                  trial_readback32::enabled.load(std::memory_order_relaxed) != saved;
+              routed &= rex::ui::ProcessKeyEvent(second) && second.is_handled() &&
+                  trial_readback32::enabled.load(std::memory_order_relaxed) == saved;
+            }
+            REXLOG_INFO("[trial-depth-key-test] key=F6 owners={} unique={} real_sdk_dispatch_two_toggles_restore={} os_input=false", owners, matches == 1, routed);
+            if (!routed) std::abort();
+          }
+        }
+        if (installed && REXCVAR_GET(badco_diagnostic_hotkeys) && REXCVAR_GET(badco_shadow_array_fetch_fix)) {
+          rex::ui::RegisterBind("bind_trial_shadow_array", "F12", "Toggle experimental shadow layer selection", [this] {
+            const bool next = !trial_shadow_array::enabled.load(std::memory_order_relaxed);
+            trial_shadow_array::enabled.store(next, std::memory_order_relaxed);
+            if (auto* w = window()) w->SetTitle(next ? "Shadows: array fix ON" : "Shadows: array fix OFF");
+            REXLOG_INFO("[trial-shadow-array] F12 enabled={} corrected_draws={}", next,
+                        trial_shadow_array::corrected_draws.load(std::memory_order_relaxed));
+            rex::FlushLogging();
+          });
+          REXLOG_INFO("[trial-shadow-array] experiment enabled; F12 toggles corrected layer selection / original");
+        }
+      }
+    trial_shadow::mode.store(REXCVAR_GET(badco_shadow_fixed_movement), std::memory_order_relaxed);
+    if (REXCVAR_GET(badco_diagnostic_hotkeys)) {
+    rex::ui::RegisterBind("bind_trial_shadow_stabilization", "F9", "Cycle shadow stabilization test", [this] {
+      const int current = trial_shadow::mode.load(std::memory_order_relaxed);
+      const int next = current < 0 ? 1 : current == 1 ? 0 : -1;
+      trial_shadow::mode.store(next, std::memory_order_relaxed);
+      const char* label = next < 0 ? "Shadows: original" : next ? "Shadows: stabilization ON" : "Shadows: stabilization OFF";
+      if (auto* w = window()) w->SetTitle(label);
+      REXLOG_INFO("[trial-shadow] F9: {} (mode={})", label, next);
+      rex::FlushLogging();
+    });
+    REXLOG_INFO("[trial-shadow] mode={}; F9 cycles original / stabilization ON / stabilization OFF",
+                trial_shadow::mode.load(std::memory_order_relaxed));
+    }
+    REXLOG_INFO("[trial-input] relative mouse vertical multiplier={:.2f}; gamepads unchanged",
+                REXCVAR_GET(badco_mouse_y_scale));
+    rex::ui::RegisterBind("bind_trial_mouse_look", "F8", "Toggle mouse look capture", [] {
+      const bool active = !rex::input::mnk::IsMouseLookActive();
+      rex::input::mnk::SetMouseLookActive(active);
+      REXLOG_INFO("[trial-input] mouse look active={}; F8 toggles capture", active);
+      rex::FlushLogging();
+    });
+    REXLOG_INFO("[trial-input] mouse look active={}; F8 toggles capture; LMB/RMB map to triggers",
+                rex::input::mnk::IsMouseLookActive());
 
     // Start real-time background log flusher (every 500ms) to ensure logs are never lost
     static std::atomic<bool> s_flush_running{false};
@@ -337,6 +480,15 @@ public:
       debug_tools::PerformMissingFunctionScan();
       debug_tools::PerformStubSweep();
     }
+#if defined(BADCO_RELEASE_PACKAGE)
+    if (auto* w = window()) w->SetTitle("Battlefield: Bad Company | RC1 (FULL)");
+    REXLOG_INFO("[release-profile] readback={} shadow_layer_fix={} depth_experiment={} hdr_experiment={} fps_60={} diagnostic_hotkeys={} startup_tests={} timing_diagnostics={} input_frame_sampling={}",
+        rex::cvar::GetFlagByName("readback_resolve"), REXCVAR_GET(badco_shadow_array_fetch_fix),
+        REXCVAR_GET(badco_shadow_depth_readback_fast), REXCVAR_GET(badco_hdr_readback_fast),
+        REXCVAR_GET(badco_fps_60), REXCVAR_GET(badco_diagnostic_hotkeys),
+        REXCVAR_GET(badco_startup_self_tests), REXCVAR_GET(badco_timing_diagnostics),
+        REXCVAR_GET(badco_mnk_frame_sampling));
+#endif
   }
 
   void OnConfigurePaths(rex::PathConfig &paths) override
