@@ -1,0 +1,64 @@
+{
+  "product": "BadCompanyRecomp",
+  "version": "2026.10.22-rc1",
+  "platform": "Windows x64",
+  "build_type": "Release",
+  "compiler": "clang-cl 18.1.8, MSVC 14.33 headers/libs",
+  "preset": "local-win-release",
+  "compiler_optimization": "/O2 /Ob2 /DNDEBUG /Zi",
+  "per_source_optimization_exception": "generated/default/badcompanyrecomp_recomp.82.cpp: /Od (LLVM instruction selection crash workaround)",
+  "sdk": "0.10.0.8-dev.g1406e1b",
+  "sdk_binary_configuration": "RelWithDebInfo (pinned ABI, normal MSVC runtime)",
+  "original_project_revision": "f78b557b413ca8fdcb67696c18239db4a34d43a2",
+  "game_title_id": "454107F9",
+  "game_xex_sha256": "2072aebe08f5a6e3aa30a09171278277151d3d6557617ee762983bbdae9a196a",
+  "executable_sha256": "4b17c8c581c9472e2b210404ba706fea16ebeff5e1bc47bffa2327d456bb4003",
+  "sdk_binary_hashes": {
+    "rexgpu-xenosrd.dll": "036faa43d75adcfcbdcc7ad5dd099ec020fbd1941bf38df104fda32d07ac5e92",
+    "rexruntimerd.dll": "d96766225758474f1c9636d7c47e404353c80f7d637ff8a3a91619a99d914113",
+    "TracyClientrd.dll": "82fd88b08acd8e0269c0449ea9069efa09fad74163fc95a463fafba9b7d70514"
+  },
+  "readback": "full",
+  "fps_lock": 30,
+  "internal_resolution": [
+    1280,
+    720
+  ],
+  "window_resolution": [
+    1920,
+    1080
+  ],
+  "diagnostics_and_experiments_default": false,
+  "release_boot_checked": true,
+  "release_self_tests_checked": true,
+  "full_campaign_on_this_release_verified": false,
+  "known_issue": "Residual discrete image pauses/stutters remain unresolved.",
+  "portable_path_boot_checked": true,
+  "verified_shadow_shader_count": 4119,
+  "verified_shadow_dimension_fields": 21792,
+  "verified_mouse_axis_values": 65536,
+  "verified_mouse_axis_max_error": 1,
+  "executable_bytes": 65832960,
+  "validation": {
+    "regression": {
+      "boot_checked": true,
+      "elapsed_seconds": 25.125,
+      "terminated_by_harness": true,
+      "users_unchanged": true
+    },
+    "production": {
+      "boot_checked": true,
+      "elapsed_seconds": 25.125,
+      "terminated_by_harness": true,
+      "users_unchanged": true
+    },
+    "relocation": {
+      "boot_checked": true,
+      "elapsed_seconds": 25.343999999997322,
+      "terminated_by_harness": true,
+      "users_unchanged": true
+    },
+    "source_equivalence": "All C++ sources match the tested RC1; only documentation, settings comments and portable tooling differ."
+  },
+  "validation_scope": "Bounded startup/render/audio and regression checks; no campaign interaction on RC1."
+}
