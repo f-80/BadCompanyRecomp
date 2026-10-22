@@ -1,103 +1,40 @@
-# AGENTS.md — Instructions for AI Coding Agents
+# Instructions for contributors and coding agents
 
-This file is written for AI coding agents (**Claude Code**, **Antigravity**, **Gemini**, etc.) collaborating on the static PC recompilation of **Battlefield: Bad Company (2008)**.
+This fork recompiles Battlefield: Bad Company (Xbox 360, Title ID `454107F9`) for Windows x64 using ReXGlue SDK `0.10.0.8-dev.g1406e1b`.
 
-- **Title**: Battlefield: Bad Company (USA)
-- **Title ID**: `454107F9`
-- **Platform**: Xbox 360 (Xenon architecture, PowerPC 64-bit Big-Endian)
-- **Engine**: Frostbite 1.0 (first appearance of Destruction 1.0)
-- **SDK**: ReXGlue SDK `v0.10.0.8-dev.g1406e1b`
-- **Maintainer language**: Russian (chat and reports in Russian; code and commits in English).
+## Required workflow
 
----
+- Write project documentation, source comments, tooling output and new commit messages in English.
+- Use `tools/build.ps1` for CLI builds. It initializes Visual Studio and the validated LLVM toolchain before code generation, CMake configuration and compilation.
+- Treat `generated/` as read-only output. Add guest overrides to `src/game_fixes.h` and function discovery metadata to the TOML manifests. Never patch generated C++ directly.
+- Preserve the tested release profile: **30 FPS, FULL readback, D3D12 ROV, native 1280×720 rendering into a 1920×1080 window**, the shadow-array fix and mouse corrections.
+- Keep experimental readback, capture probes, diagnostic hotkeys, scratch self-tests and periodic timing reports disabled in ordinary release launches.
+- Do not substitute SDK DLLs. `game_version.json` records the required image and SDK hashes. Guest helper bindings and GPU vtable offsets depend on those exact binaries.
+- Keep the guest input-frame epoch increment active even when timing diagnostics are disabled. Mouse sampling depends on it.
+- Do not commit game data, generated code, SDK/build binaries, shader caches, logs, dumps, personal saves, local paths or credentials.
 
-## 1. Absolute Invariant Rules (Never Break)
+## Guest overrides
 
-| Rule ID | Rule Statement | Reason / Consequence |
-| :--- | :--- | :--- |
-| **RULE_CLI_BUILD_TOOL** | **For CLI builds, use `tools/build.ps1` only.** | Never run raw cmake or cl without proper VS DevShell environment. `tools/build.ps1` loads Visual Studio 18 DevShell and LLVM path exactly like F7 in IDE. |
-| **RULE_READONLY_GENERATED** | **`generated/` is strictly READ-ONLY.** | The build automatically re-runs `rexglue codegen` whenever manifests, config TOMLs, or the XEX change. It completely wipes `generated/`. All patches and overrides MUST be placed in `src/game_fixes.h` or config TOMLs. |
-| **RULE_LANG_RUSSIAN** | **All user communication and markdown reports MUST be in Russian.** | Mandatory user requirement. Code comments and commits in English. |
-| **RULE_RETRO_STANDARDS** | **Preserve 30 FPS lock (`badco_fps_60 = false`), 720p/1080p, D3D12 ROV, fast readback.** | Frostbite 1.0 physics and vehicle simulation degrade at variable/unlocked frame rates; lighting relies on ROV and fast readback. |
+ReXGlue emits a strong `__imp__sub_XXXXXXXX` implementation and a weak `sub_XXXXXXXX` alias. A `REX_HOOK_RAW(sub_XXXXXXXX)` definition in `src/game_fixes.h` overrides the weak alias. Call `__imp__sub_XXXXXXXX(ctx, base)` when the original implementation is required. Validate image bounds, object layout and error-state preservation when changing these hooks.
 
----
+## Validation
 
-## 2. Weak Symbols Architecture for Guest Overrides
+Run `python tools/verify_source.py` before publishing source changes. Use the build wrapper for compile validation and `tools/test_run.ps1` for a bounded launch. The latter runs with an isolated writable profile and stops only its own child process. It does not automate campaign input.
 
-In ReXGlue every recompiled function is generated as:
-1. A **strong** implementation: `__imp__sub_XXXXXXXX`
-2. A **weak alias**: `sub_XXXXXXXX` (aliased to `__imp__sub_XXXXXXXX`)
+Maintain the distinction between reported playthrough evidence and automated checks. A preceding development build completed the campaign according to the tester; RC1 passed startup/render/audio and targeted regressions. RC1 has not yet completed a new full playthrough. Residual frame stalls remain unresolved.
 
-All call sites and the dispatch table reference the weak symbol `sub_XXXXXXXX`.
-To override any guest function, define a strong symbol in `src/game_fixes.h`:
+## Project layout
 
-```cpp
-#include <rex/hook.h>
+| Path | Purpose |
+|---|---|
+| `src/game_fixes.h` | Guest function overrides |
+| `src/badcompanyrecomp_app.h` | Runtime setup, memory handling, graphics and input integration |
+| `src/game_cvars.h` | Game-specific configuration flags |
+| `src/trial_*.h` | Existing validated fixes and optional diagnostic helpers |
+| `settings/` | Rendering and input defaults |
+| `tools/build.ps1` | Supported CLI build entry point |
+| `Start_BC1.ps1` | Portable launcher and supported XEX check |
+| `tools/package_release.py` | Allowlisted portable package creation |
+| `docs/` | Validation scope, known issues and release notes |
 
-REX_HOOK_RAW(sub_XXXXXXXX) {
-    // Custom logic / bypass
-    // To call the original implementation:
-    // __imp__sub_XXXXXXXX(ctx, base);
-}
-```
-Because `badcompanyrecomp_recomp` is an OBJECT library, the linker picks the strong definition from `main.obj` and discards the weak alias.
-
----
-
-## 3. Project Directory Map
-
-```text
-C:\Recompiles\Bad Company\
-├── badcompanyrecomp_manifest.toml   <-- ReXGlue codegen manifest
-├── default_functions.toml          <-- Function table & indirect call declarations
-├── CMakeLists.txt                  <-- CMake configuration (C++23, dbghelp linked)
-├── CMakeUserPresets.json           <-- Presets (local-win-relwithdebinfo)
-├── settings\
-│   ├── hardware.toml               <-- GPU / Engine settings (D3D12 ROV, 30 FPS, allow_game_relative_writes)
-│   └── mapping.toml                <-- Controller / Keyboard & Mouse bindings
-├── src\
-│   ├── main.cpp                    <-- Main entry point (includes game_fixes.h, defines REX_DEFINE_APP)
-│   ├── badcompanyrecomp_app.h      <-- ReXApp lifecycle, SafeCommitRange, On-Demand Page Fault Handler
-│   ├── game_fixes.h                <-- ALL guest function overrides and hooks
-│   ├── game_cvars.h                <-- Custom CVars
-│   ├── game_patches.h              <-- Engine memory byte patches
-│   ├── debug_tools.h               <-- Stub sweep and missing function scanner
-│   └── utils.h                     <-- Path and configuration helpers
-├── tools\
-│   ├── build.ps1                   <-- F7 equivalent: Visual Studio DevShell Clang build
-│   ├── launch.ps1                  <-- F5 equivalent: Kill previous & launch with args
-│   └── test_run.ps1                <-- Automated run, log watcher, crash catcher
-├── assets\                         <-- Game disc files (default.xex, dist/, Output/, etc.)
-├── generated\                      <-- [READ-ONLY] 367 generated C++ units (54,126 functions)
-└── out\build\local-win-relwithdebinfo\logs\ <-- Runtime logs (badcompanyrecomp_NNN.log, crash.dmp)
-```
-
----
-
-## 4. Automation Scripts (Claude/Antigravity Pipeline)
-
-All AI agents can autonomously trigger compilation, launching, and crash analysis:
-
-- **Build (F7)**:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File tools/build.ps1
-  ```
-- **Launch (F5)**:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File tools/launch.ps1
-  ```
-- **Test Run & Crash Monitor**:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File tools/test_run.ps1 -TimeoutSeconds 25
-  ```
-
----
-
-## 5. Current Milestone Status (HISTORIC MILESTONE: TITLE SCREEN REACHED)
-
-- **Status**: **TITLE SCREEN REACHED ("Press START to begin")**! 🎮
-- **Graphics Subsystem**: Direct3D 12 ROV pipeline successfully rendering high-resolution artwork, title logo, and soldier silhouettes without graphical glitches.
-- **Audio Subsystem**: RenderWare Audio Core (`RWAudioCore Dac`) and SDL audio driver actively decoding and streaming PCM audio frames in real time.
-- **Input Subsystem**: SDL XInput game controller connected and listening for START button.
-- **Memory & VFS**: `\Device\Harddisk0\Cache0` HDD cache check bypassed via `sub_8292BDA0` (No-HDD SKU emulation); guest page fault handler handling dynamic memory on demand.
-- **Active Task**: Progress from Title Screen into Main Menu and Campaign Mission 1 (Welcome to Bad Company).
+The `trial_` source names are retained to avoid changing the tested implementation solely for renaming. Follow the user's explicit instructions when they change a project preference.

@@ -1,31 +1,48 @@
-# Build and IDE artifacts
+# Build, IDE and generated output
 build/
 out/
 bin/
 obj/
+dist/
 .vs/
 *.user
 *.suo
 CMakeUserPresets.json
-
-# Generated C++ sources
 generated/
 
-# Game assets from Xbox 360 disc/ISO (never commit retail data)
+# Retail game files
 assets/*
 !assets/README.md
-
-# ReXGlue SDK
-rexglue/win-amd64/
-rexglue/linux-amd64/
-rexglue/mac-amd64/
-rexglue/mac-arm64/
-rexglue/*.zip
-
-# Logs and runtime dumps
-logs/
-*.log
-
-# Disc archives and backups
-*.7z
+*.xex
 *.iso
+*.7z
+
+# SDK and third-party binary packages
+rexglue/
+*.dll
+*.exe
+*.lib
+*.pdb
+*.map
+*.zip
+
+# Runtime state and local paths
+runtime/
+logs/
+cache/
+user/
+metadata/
+*.log
+*.dmp
+*.xsh
+*.xpso
+game-path*.txt
+*.local.*
+
+# Credentials and Python caches
+.env
+.env.*
+*.pem
+*.key
+__pycache__/
+*.pyc

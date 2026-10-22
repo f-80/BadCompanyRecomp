@@ -7,7 +7,7 @@
   "original": {
     "serial": "454107F9"
   },
-  "project": "Battlefield: Bad Company PC Recompilation",
+  "project": "BadCompanyRecomp (English fork)",
   "status": "in-progress",
   "targets": [
     "Windows"
@@ -16,15 +16,19 @@
   "approach": "Static recompilation using ReXGlue SDK v0.10 (Frostbite 1.0)",
   "maintainers": [
     {
-      "name": "crabinacrabic",
-      "link": "https://github.com/crabinacrabic"
+      "name": "f-80",
+      "link": "https://github.com/f-80"
     }
   ],
   "links": [
     {
       "label": "GitHub",
+      "url": "https://github.com/f-80/BadCompanyRecomp"
+    },
+    {
+      "label": "Upstream",
       "url": "https://github.com/crabinacrabic/BadCompanyRecomp"
     }
   ],
-  "notes": "Battlefield: Bad Company (Xbox 360, 2008, 454107F9) static recompilation using ReXGlue SDK v0.10. Frostbite 1.0 engine."
+  "notes": "Windows x64 fork with English documentation, local campaign fixes, corrected shadow layers and mouse input. FULL readback, 30 FPS. Occasional frame stalls remain. No game assets included."
 }

@@ -15,3 +15,69 @@
 0x827B4800 = {} # stub sweep: LR=0x827B97E0
 0x827B4BB0 = {} # stub sweep: LR=0x827B97E0
 0x827B4BE8 = {} # stub sweep: LR=0x827B97E0
+
+# Campaign startup: real functions reached in manual run 005.
+# Extents cross-checked against the existing XenonRecomp generation.
+0x82AC3AD0 = { size = 0x1C } # virtual-call adapter, LR=0x82ABA744
+0x826F3A80 = { size = 0x18 } # virtual-call adapter, LR=0x8234C4B4
+0x82460B08 = { size = 0x08 } # this-adjusting thunk -> 0x822F43E0
+0x82460A88 = { size = 0x08 } # this-adjusting thunk -> 0x82458030
+0x82460AB8 = { size = 0x08 } # this-adjusting thunk -> 0x82457FC0
+0x826F3FE0 = { size = 0x20 } # optional-object uint16 getter
+0x826F32D8 = { size = 0x08 } # double getter at object offset 440
+0x82325EE8 = { size = 0x20 } # campaign run 007: virtual-call adapter, LR=0x826F53D8
+0x8239AA88 = { size = 0x14 } # campaign run 007: argument adapter -> 0x82359D28
+0x82538BE8 = { size = 0x10 } # level-load run 009: virtual call at vtable+48
+0x822AB1F8 = { size = 0x24 } # level-load run 009: first list entry or zero
+0x8217EC88 = { size = 0x0C } # level-load run 011: nested object field getter
+0x822A7250 = { size = 0x08 } # byte setter at object+72
+0x822A6938 = { size = 0x0C } # nested object field getter
+0x82627B20 = { size = 0x08 } # this+32 -> 0x8270C828
+0x82446038 = { size = 0x0C } # copy one float from r5 to r4
+0x8280A528 = { size = 0x08 } # this+8 -> 0x82808510
+0x82538BB8 = { size = 0x10 } # virtual call at vtable+60
+0x821F8350 = { size = 0x24 } # adjust object argument, virtual call at vtable+148
+0x82538C08 = { size = 0x10 } # virtual call at vtable+4
+0x829E84C0 = { size = 0x24 } # run 013: argument adapter, virtual call vtable+28
+0x82538C78 = { size = 0x10 } # virtual call vtable+56
+0x822D8820 = { size = 0x24 } # adjust argument by -164, virtual call vtable+148
+0x822A8988 = { size = 0x08 } # field getter -> 0x82278728
+0x829E8500 = { size = 0x18 } # argument adapter, virtual call vtable+36
+0x82460AB0 = { size = 0x08 } # this-56 -> 0x82458058
+0x824ADE10 = { size = 0x24 } # optional nested-object getter
+0x821F83D8 = { size = 0x1C } # float getter from adjusted argument
+0x82538BF8 = { size = 0x10 } # virtual call vtable+64
+0x82460AA8 = { size = 0x08 } # this-56 -> 0x82458008
+0x822D88A8 = { size = 0x1C } # run 016: adjusted-argument float getter
+0x8219F2F8 = { size = 0x1C } # optional this+76 -> 0x82711540
+0x826F3658 = { size = 0x08 } # run 018: real size getter returns 1024, not the this pointer
+
+# Black screen run 020: real indirect functions, original PPC extents.
+0x8219FA60 = { size = 0x0C } # write byte through object+96
+0x821C0780 = { size = 0x08 } # object+320 getter -> 82278728
+0x821C3860 = { size = 0x0C } # nested object+208 -> 822754B8
+0x82378D38 = { size = 0x08 } # argument adapter -> 82376410
+0x822A6920 = { size = 0x18 } # nested object virtual call+4
+0x8219F608 = { size = 0x18 } # adjusted this virtual call+4
+0x821BF880 = { size = 0x2C } # flag check and original virtual call+4
+0x82212048 = { size = 0x08 } # object+68 -> 8220ACA8
+0x822A8990 = { size = 0x20 } # nested uint16 sentinel predicate
+
+0x8263EA80 = { size = 0x24 } # checkpoint run 022: optional nested object getter, inner pointer-4
+
+0x826015B8 = { size = 0x08 } # vehicle run 024: true size getter returns 2048
+0x821C5C58 = { size = 0x20 } # indexed object selection and argument adapter -> 821A2330
+
+# Artillery run 026: reached indirect functions, original PPC extents.
+0x821C5C98 = { size = 0x18 } # indexed object adapter -> 821A23D0
+0x821C5CB0 = { size = 0x18 } # indexed object adapter -> 821A2420
+0x821C5CC8 = { size = 0x18 } # indexed object adapter -> 821A2470
+0x821C5CE0 = { size = 0x10 } # indexed object adapter -> 821A24C0
+0x8219F620 = { size = 0x0C } # nested object+48 getter
+0x826F3AD8 = { size = 0x28 } # optional nested object virtual call+80
+0x821C5C78 = { size = 0x20 } # indexed object adapter -> 821A2380
+
+0x8219F3C8 = { size = 0x14 } # artillery run 028: nested object virtual call at vtable+0
+
+# Full campaign run 053: original object+12 adapter, no bypass.
+0x822A6C88 = { size = 0x08 } # lwz r3,12(r3); b 82324EC0
