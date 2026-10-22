@@ -47,6 +47,8 @@ if (root / '.git').exists():
         p = Path(name)
         if set(p.parts[:-1]) & excluded and name != 'assets/README.md':
             errors.append(f'Private/generated path tracked by Git: {name}')
+        if p.name.startswith('game-path') or p.name == 'CMakeUserPresets.json' or p.name.startswith('.env'):
+            errors.append(f'Local configuration or credentials tracked by Git: {name}')
 if errors:
     raise SystemExit('\n'.join(errors))
 print(f'Publication checks passed for {len(files)} English text files; FULL/30 FPS/ROV profile verified.')

@@ -8,7 +8,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectDir = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $launcher = Join-Path $projectDir 'Start_BC1.ps1'
-$json = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Config $Config -GameDataRoot $GameDataRoot -PrintCommand
+$launcherArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $launcher, '-Config', $Config, '-PrintCommand')
+if ($GameDataRoot) { $launcherArgs += @('-GameDataRoot', $GameDataRoot) }
+$json = & powershell.exe @launcherArgs
 if ($LASTEXITCODE -ne 0) { throw 'Launcher validation failed.' }
 $command = $json | ConvertFrom-Json
 $probeRoot = Join-Path $projectDir ('out\probes\' + [Guid]::NewGuid().ToString('N'))
