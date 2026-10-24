@@ -31,6 +31,11 @@
 #include <rex/chrono/clock.h>
 #include "trial_input_frame.h"
 #include "trial_mouse_precision.h"
+#include "camera_fov.h"
+
+REX_HOOK_RAW(sub_827F2A20) {
+  badco_camera_fov::Call(ctx, base);
+}
 
 namespace trial_shadow {
 inline std::atomic<int> mode{-1};

@@ -12,6 +12,11 @@ REXCVAR_DEFINE_STRING(graphics_backend, "any", "GPU",
                       "Graphics API backend: any, d3d12, vulkan")
     .allowed({"any", "d3d12", "vulkan"});
 
+REXCVAR_DEFINE_DOUBLE(badco_camera_fov_scale, 1.4, "Camera",
+                      "Main camera FOV multiplier (1.4 default, 1 original); also affects zoom and vehicles")
+    .range(1.0, 1.4)
+    .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
+
 REXCVAR_DEFINE_BOOL(badco_fps_60, false, "Gameplay",
                     "Unlock 60 FPS (Default: false, authentic 30 FPS for physics stability)");
 
